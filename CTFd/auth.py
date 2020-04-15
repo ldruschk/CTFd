@@ -1,39 +1,32 @@
-from flask import (
-    current_app as app,
-    render_template,
-    request,
-    redirect,
-    url_for,
-    session,
-    Blueprint,
-)
-from itsdangerous.exc import BadTimeSignature, SignatureExpired, BadSignature
-
-from CTFd.models import db, Users, Teams
-
-from CTFd.utils import get_config, get_app_config
-from CTFd.utils.decorators import ratelimit
-from CTFd.utils import user as current_user
-from CTFd.utils import config, validators
-from CTFd.utils import email
-from CTFd.utils.security.auth import login_user, logout_user
-from CTFd.utils.crypto import verify_password
-from CTFd.utils.logging import log
-from CTFd.utils.decorators.visibility import check_registration_visibility
-from CTFd.utils.config import is_teams_mode
-from CTFd.utils.config.visibility import registration_visible
-from CTFd.utils.modes import TEAMS_MODE
-from CTFd.utils.security.signing import unserialize
-from CTFd.utils.helpers import error_for, get_errors
-
 import base64
+
 import requests
+from flask import Blueprint
+from flask import current_app as app
+from flask import redirect, render_template, request, session, url_for
+from itsdangerous.exc import BadSignature, BadTimeSignature, SignatureExpired
+
+from CTFd.models import Teams, Users, db
+from CTFd.utils import config, email, get_app_config, get_config
+from CTFd.utils import user as current_user
+from CTFd.utils import validators
+from CTFd.utils.config import is_teams_mode
+from CTFd.utils.config.integrations import mlc_registration
+from CTFd.utils.config.visibility import registration_visible
+from CTFd.utils.crypto import verify_password
+from CTFd.utils.decorators import ratelimit
+from CTFd.utils.decorators.visibility import check_registration_visibility
+from CTFd.utils.helpers import error_for, get_errors
+from CTFd.utils.logging import log
+from CTFd.utils.modes import TEAMS_MODE
+from CTFd.utils.security.auth import login_user, logout_user
+from CTFd.utils.security.signing import unserialize
 
 auth = Blueprint("auth", __name__)
 
 
 @auth.route("/confirm", methods=["POST", "GET"])
-@auth.route("/confirm/<data>", methods=["GET"])
+@auth.route("/confirm/<data>", methods=["POST", "GET"])
 @ratelimit(method="POST", limit=10, interval=60)
 def confirm(data=None):
     if not get_config("verify_emails"):
@@ -54,6 +47,9 @@ def confirm(data=None):
             )
 
         user = Users.query.filter_by(email=user_email).first_or_404()
+        if user.verified:
+            return redirect(url_for("views.settings"))
+
         user.verified = True
         log(
             "registrations",
@@ -61,6 +57,7 @@ def confirm(data=None):
             name=user.name,
         )
         db.session.commit()
+        email.successful_registration_notification(user.email)
         db.session.close()
         if current_user.authed():
             return redirect(url_for("challenges.listing"))
@@ -256,12 +253,7 @@ def register():
                     if (
                         config.can_send_mail()
                     ):  # We want to notify the user that they have registered.
-                        email.sendmail(
-                            request.form["email"],
-                            "You've successfully registered for {}".format(
-                                get_config("ctf_name")
-                            ),
-                        )
+                        email.successful_registration_notification(user.email)
 
         log("registrations", "[{date}] {ip} - {name} registered with {email}")
         db.session.close()
@@ -403,7 +395,7 @@ def oauth_redirect():
             user = Users.query.filter_by(email=user_email).first()
             if user is None:
                 # Check if we are allowing registration before creating users
-                if registration_visible():
+                if registration_visible() or mlc_registration():
                     user = Users(
                         name=user_name,
                         email=user_email,

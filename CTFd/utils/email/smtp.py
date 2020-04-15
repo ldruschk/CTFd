@@ -1,7 +1,8 @@
-from CTFd.utils import get_config, get_app_config
+import smtplib
 from email.mime.text import MIMEText
 from socket import timeout
-import smtplib
+
+from CTFd.utils import get_app_config, get_config
 
 
 def get_smtp(host, port, username=None, password=None, TLS=None, SSL=None, auth=None):
@@ -19,7 +20,10 @@ def get_smtp(host, port, username=None, password=None, TLS=None, SSL=None, auth=
 
 
 def sendmail(addr, text, subject):
+    ctf_name = get_config("ctf_name")
     mailfrom_addr = get_config("mailfrom_addr") or get_app_config("MAILFROM_ADDR")
+    mailfrom_addr = "{} <{}>".format(ctf_name, mailfrom_addr)
+
     data = {
         "host": get_config("mail_server") or get_app_config("MAIL_SERVER"),
         "port": int(get_config("mail_port") or get_app_config("MAIL_PORT")),

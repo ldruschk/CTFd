@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from tests.helpers import create_ctfd, destroy_ctfd, login_as_user, register_user
 from CTFd.config import TestingConfig
+from tests.helpers import create_ctfd, destroy_ctfd, login_as_user, register_user
 
 
 def test_reverse_proxy_config():
@@ -22,6 +22,18 @@ def test_reverse_proxy_config():
 
     class ReverseProxyConfig(TestingConfig):
         REVERSE_PROXY = "true"
+
+    app = create_ctfd(config=ReverseProxyConfig)
+    with app.app_context():
+        assert app.wsgi_app.x_for == 1
+        assert app.wsgi_app.x_proto == 1
+        assert app.wsgi_app.x_host == 1
+        assert app.wsgi_app.x_port == 1
+        assert app.wsgi_app.x_prefix == 1
+    destroy_ctfd(app)
+
+    class ReverseProxyConfig(TestingConfig):
+        REVERSE_PROXY = True
 
     app = create_ctfd(config=ReverseProxyConfig)
     with app.app_context():
