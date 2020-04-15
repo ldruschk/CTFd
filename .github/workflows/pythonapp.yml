@@ -31,6 +31,6 @@ jobs:
         black --check --exclude=CTFd/uploads --exclude=node_modules .
     - name: Test with pytest
       run: |
-        pip install pytest coverage pytest-cov pytest-xdist bandit mock freezegun
-        pytest --cov=CTFd --cov-context=test --ignore=node_modules/ --disable-warnings -n auto
+        pip install pytest coverage pytest-cov moto bandit mock freezegun
+        pytest --cov=CTFd --cov-context=test --ignore=node_modules/ --disable-warnings
         bandit -r CTFd -x CTFd/uploads
