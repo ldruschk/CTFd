@@ -133,7 +133,12 @@ def destroy_ctfd(app):
 
 
 def register_user(
-    app, name="user", email="user@ctfd.io", password="password", authkey=None, raise_for_error=True
+    app,
+    name="user",
+    email="user@ctfd.io",
+    password="password",
+    authkey=None,
+    raise_for_error=True,
 ):
     with app.app_context():
         with app.test_client() as client:
@@ -209,7 +214,7 @@ def login_with_mlc(
         email_key="email",
         team_key="team",
         team_id_key="id",
-        team_name_key="name"
+        team_name_key="name",
     )
 
 
@@ -227,7 +232,7 @@ def login_with_oauth(
     email_key=None,
     team_key=None,
     team_id_key=None,
-    team_name_key=None
+    team_name_key=None,
 ):
     with app.test_client() as client, patch.object(
         requests, "get"

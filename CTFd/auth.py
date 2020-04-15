@@ -217,7 +217,9 @@ def register():
         if name_len:
             errors.append("Pick a longer user name")
 
-        auth_key = get_app_config("REGISTRATION_AUTH_KEY") or get_config("registration_auth_key")
+        auth_key = get_app_config("REGISTRATION_AUTH_KEY") or get_config(
+            "registration_auth_key"
+        )
         if auth_key:
             if auth_key != request.form["authkey"]:
                 errors.append("Invalid auth key")
@@ -385,12 +387,36 @@ def oauth_redirect():
             }
             api_data = requests.get(url=user_url, headers=headers).json()
 
-            user_id_key = get_app_config("OAUTH_API_ID_KEY") or get_config("oauth_api_id_key") or "id"
-            user_id = user_id_key(api_data) if callable(user_id_key) else api_data[user_id_key]
-            user_name_key = get_app_config("OAUTH_API_NAME_KEY") or get_config("oauth_api_name_key") or "name"
-            user_name = user_name_key(api_data) if callable(user_name_key) else api_data[user_name_key]
-            user_email_key = get_app_config("OAUTH_API_EMAIL_KEY") or get_config("oauth_api_email_key") or "email"
-            user_email = user_email_key(api_data) if callable(user_email_key) else api_data[user_email_key]
+            user_id_key = (
+                get_app_config("OAUTH_API_ID_KEY")
+                or get_config("oauth_api_id_key")
+                or "id"
+            )
+            user_id = (
+                user_id_key(api_data)
+                if callable(user_id_key)
+                else api_data[user_id_key]
+            )
+            user_name_key = (
+                get_app_config("OAUTH_API_NAME_KEY")
+                or get_config("oauth_api_name_key")
+                or "name"
+            )
+            user_name = (
+                user_name_key(api_data)
+                if callable(user_name_key)
+                else api_data[user_name_key]
+            )
+            user_email_key = (
+                get_app_config("OAUTH_API_EMAIL_KEY")
+                or get_config("oauth_api_email_key")
+                or "email"
+            )
+            user_email = (
+                user_email_key(api_data)
+                if callable(user_email_key)
+                else api_data[user_email_key]
+            )
 
             user = Users.query.filter_by(email=user_email).first()
             if user is None:
@@ -405,7 +431,10 @@ def oauth_redirect():
                     db.session.add(user)
                     db.session.commit()
                 else:
-                    log("logins", "[{date}] {ip} - Public registration via MLC/OAuth blocked")
+                    log(
+                        "logins",
+                        "[{date}] {ip} - Public registration via MLC/OAuth blocked",
+                    )
                     error_for(
                         endpoint="auth.login",
                         message="Public registration is disabled. Please try again later.",
@@ -413,10 +442,26 @@ def oauth_redirect():
                     return redirect(url_for("auth.login"))
 
             if get_config("user_mode") == TEAMS_MODE:
-                team_id_key = get_app_config("OAUTH_API_TEAM_ID_KEY") or get_config("oauth_api_team_id_key") or (lambda x: x["team"]["id"])
-                team_id = team_id_key(api_data) if callable(team_id_key) else api_data[team_id_key]
-                team_name_key = get_app_config("OAUTH_API_TEAM_NAME_KEY") or get_config("oauth_api_team_name_key") or (lambda x: x["team"]["name"])
-                team_name = team_name_key(api_data) if callable(team_name_key) else api_data[team_name_key]
+                team_id_key = (
+                    get_app_config("OAUTH_API_TEAM_ID_KEY")
+                    or get_config("oauth_api_team_id_key")
+                    or (lambda x: x["team"]["id"])
+                )
+                team_id = (
+                    team_id_key(api_data)
+                    if callable(team_id_key)
+                    else api_data[team_id_key]
+                )
+                team_name_key = (
+                    get_app_config("OAUTH_API_TEAM_NAME_KEY")
+                    or get_config("oauth_api_team_name_key")
+                    or (lambda x: x["team"]["name"])
+                )
+                team_name = (
+                    team_name_key(api_data)
+                    if callable(team_name_key)
+                    else api_data[team_name_key]
+                )
 
                 team = Teams.query.filter_by(oauth_id=team_id).first()
                 if team is None:
