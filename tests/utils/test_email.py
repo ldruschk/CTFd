@@ -1,30 +1,10 @@
 from tests.helpers import create_ctfd, destroy_ctfd
 from CTFd.utils import get_config, set_config
-from CTFd.utils.email import sendmail, verify_email_address, check_email_format
+from CTFd.utils.email import sendmail, verify_email_address
 from freezegun import freeze_time
 from mock import patch, Mock
 from email.mime.text import MIMEText
 import requests
-
-
-def test_check_email_format():
-    """Test that the check_email_format() works properly"""
-    assert check_email_format("user@ctfd.io") is True
-    assert check_email_format("user+plus@gmail.com") is True
-    assert check_email_format("user.period1234@gmail.com") is True
-    assert check_email_format("user.period1234@b.c") is True
-    assert check_email_format("user.period1234@b") is False
-    assert check_email_format("no.ampersand") is False
-    assert check_email_format("user@") is False
-    assert check_email_format("@ctfd.io") is False
-    assert check_email_format("user.io@ctfd") is False
-    assert check_email_format("user\\@ctfd") is False
-
-    for invalid_email in ["user.@ctfd.io", ".user@ctfd.io", "user@ctfd..io"]:
-        try:
-            assert check_email_format(invalid_email) is False
-        except AssertionError:
-            print(invalid_email, "did not pass validation")
 
 
 @patch("smtplib.SMTP")
@@ -176,7 +156,6 @@ def test_sendmail_with_mailgun_from_db_config(fake_post_request):
 
 
 @patch("smtplib.SMTP")
-@freeze_time("2012-01-14 03:21:34")
 def test_verify_email(mock_smtp):
     """Does verify_email send emails"""
     app = create_ctfd()
@@ -191,7 +170,8 @@ def test_verify_email(mock_smtp):
         from_addr = get_config("mailfrom_addr") or app.config.get("MAILFROM_ADDR")
         to_addr = "user@user.com"
 
-        verify_email_address(to_addr)
+        with freeze_time("2012-01-14 03:21:34"):
+            verify_email_address(to_addr)
 
         # This is currently not actually validated
         msg = (
@@ -202,7 +182,9 @@ def test_verify_email(mock_smtp):
 
         ctf_name = get_config("ctf_name")
         email_msg = MIMEText(msg)
-        email_msg["Subject"] = "Message from {0}".format(ctf_name)
+        email_msg["Subject"] = "Confirm your account for {ctf_name}".format(
+            ctf_name=ctf_name
+        )
         email_msg["From"] = from_addr
         email_msg["To"] = to_addr
 
