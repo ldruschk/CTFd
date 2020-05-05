@@ -156,7 +156,6 @@ def register_user(
                 with client.session_transaction() as sess:
                     assert sess["id"]
                     assert sess["name"] == name
-                    assert sess["type"]
                     assert sess["email"]
                     assert sess["nonce"]
 
@@ -184,7 +183,6 @@ def login_as_user(app, name="user", password="password", raise_for_error=True):
                 with client.session_transaction() as sess:
                     assert sess["id"]
                     assert sess["name"]
-                    assert sess["type"]
                     assert sess["email"]
                     assert sess["nonce"]
             return client
@@ -292,7 +290,6 @@ def login_with_oauth(
             with client.session_transaction() as sess:
                 assert sess["id"]
                 assert sess["name"]
-                assert sess["type"]
                 assert sess["email"]
                 assert sess["nonce"]
         return client
