@@ -142,9 +142,9 @@ def test_oauth_configure_flow_custom_provider():
             team_name_key="teamnamekey",
         )
         with client.session_transaction() as sess:
+            print(sess)
             assert sess["id"]
             assert sess["name"]
-            assert sess["type"]
             assert sess["email"]
             assert sess["nonce"]
     destroy_ctfd(app)
